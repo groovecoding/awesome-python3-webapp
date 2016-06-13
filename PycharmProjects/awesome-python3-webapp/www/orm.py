@@ -1,6 +1,11 @@
 import logging
 from www.dboperation import select
 
+
+def log(sql, args=None):
+    logging.info('SQL: [%s] args: %s' % (sql, str(args or [])))
+
+
 class Field:
     def __init__(self, name, column_type, primary_key, default):
         self.name = name
@@ -12,15 +17,35 @@ class Field:
         return '<%s, %s:%s>' % (self.__class__.__name__, self.column_type, self.name)
 
 
-class StringFiled(Field):
+class StringField(Field):
     def __init__(self, name=None, primary_key=False, default=None, ddl='varchar(100)'):
-        super(StringFiled, self).__init__(name, ddl, primary_key, default)
+        super(StringField, self).__init__(name, ddl, primary_key, default)
+
+
+class IntegerField(Field):
+    def __init__(self, name=None, primary_key=False, default=0):
+        super(IntegerField, self).__init__(name, 'bigint', primary_key, default)
+
+
+class FloatField(Field):
+    def __init__(self, name=None, primary_key=False, default=0.0):
+        super(FloatField, self).__init__(name, 'real', primary_key, default)
+
+
+class BooleanField(Field):
+    def __init__(self, name=None, default=False):
+        super(BooleanField, self).__init__(name, 'boolean', False, default)
+
+
+class TextField(Field):
+    def __init__(self, name=None, default=False):
+        super(TextField, self).__init__(name, 'text', False, default)
 
 
 class ModelMetaclass(type):
     def __new__(mcs, name, bases, attrs):
 
-        if name == 'Model':
+        if name == 'Model':   # 排除掉Model本身，为什么？ 因为model不是表
             return super(ModelMetaclass, mcs).__new__(mcs, name, bases, attrs)
 
         table_name = attrs.get('__table__', None) or name
@@ -80,7 +105,7 @@ class Model(dict, metaclass=ModelMetaclass):
             field = self.__mappings__[key]
             if field.default is not None:
                 value = field.default() if callable(field.default) else field.default
-                logging.debug('using default value for %s:%s' %(key, str(value)))
+                logging.debug('using default value for %s:%s' % (key, str(value)))
                 setattr(self, key, value)
 
     @classmethod
@@ -104,4 +129,5 @@ class Model(dict, metaclass=ModelMetaclass):
                 args.extend(limit)
             else:
                 raise ValueError
-        resultset = await select(' '.join(sql), args)
+        result_set = await select(' '.join(sql), args)
+        return result_set

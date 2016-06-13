@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import aiomysql
-
+from www.orm import log
 
 
 @asyncio.coroutine
@@ -34,19 +34,19 @@ def select(sql, args, size=None):
             rs = yield from cur.fetchall()
         yield from cur.close()
         logging.info('rows returned: %s' % len(rs))
-        return rs        #返回结果集
+        return rs        # 返回结果集
 
 
 @asyncio.coroutine
 def execute(sql, args):
-    logging.log(sql)
+    log(sql)
     with (yield from __pool) as conn:
         try:
             cur = yield from conn.cursor()
             yield from cur.execute(sql.replace('?', '%s'), args)
             affected = cur.rowcount
             yield from cur.close()
-        except BaseException as e:
+        except BaseException:
             raise
         return affected    # rowcount 赋值给affected， 返回它
 
