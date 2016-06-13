@@ -3,6 +3,7 @@ import logging
 import aiomysql
 
 
+
 @asyncio.coroutine
 def create_pool(loop, **kwargs):
     logging.info('create database connection pool')
@@ -33,4 +34,19 @@ def select(sql, args, size=None):
             rs = yield from cur.fetchall()
         yield from cur.close()
         logging.info('rows returned: %s' % len(rs))
-        return rs
+        return rs        #返回结果集
+
+
+@asyncio.coroutine
+def execute(sql, args):
+    logging.log(sql)
+    with (yield from __pool) as conn:
+        try:
+            cur = yield from conn.cursor()
+            yield from cur.execute(sql.replace('?', '%s'), args)
+            affected = cur.rowcount
+            yield from cur.close()
+        except BaseException as e:
+            raise
+        return affected    # rowcount 赋值给affected， 返回它
+
